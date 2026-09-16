@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
-PAYLOAD = ROOT / "skills" / "last30days"
+PAYLOAD = ROOT / "skills" / "last30days-cn"
 SOURCE_SKILL = ROOT / "SKILL.md"
 SOURCE_SCRIPTS = ROOT / "scripts"
 PAYLOAD_SKILL = PAYLOAD / "SKILL.md"
@@ -97,7 +97,7 @@ def sync() -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Sync root sources to skills/last30days payload")
+    parser = argparse.ArgumentParser(description="Sync root sources to skills/last30days-cn payload")
     parser.add_argument("--check", action="store_true", help="check for drift without writing")
     args = parser.parse_args()
     return check() if args.check else sync()
