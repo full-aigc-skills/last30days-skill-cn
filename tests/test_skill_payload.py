@@ -7,6 +7,10 @@
 import os
 import subprocess
 import sys
+import runpy
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SKILL_ENTRY = os.path.join(REPO_ROOT, "skills", "last30days-cn", "SKILL.md")
@@ -40,3 +44,29 @@ def test_payload_matches_root_sources():
         stderr=subprocess.PIPE,
     )
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_payload_preserves_codex_metadata_on_repeated_sync():
+    """Codex 配置必须随源文件打包，重复同步不能将其作为孤立文件删除。"""
+    namespace = runpy.run_path(os.path.join(REPO_ROOT, "scripts", "build_payload.py"))
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        payload = root / "skills" / "last30days-cn"
+        (root / "scripts").mkdir()
+        (root / "agents").mkdir()
+        (root / "SKILL.md").write_text("---\nname: last30days-cn\n---\n", encoding="utf-8")
+        metadata = root / "agents" / "openai.yaml"
+        metadata.write_text('interface:\n  display_name: "近30天研究"\n', encoding="utf-8")
+        globals_for_sync = namespace["sync"].__globals__
+        with patch.dict(globals_for_sync, {
+            "ROOT": root, "PAYLOAD": payload,
+            "SOURCE_SKILL": root / "SKILL.md", "PAYLOAD_SKILL": payload / "SKILL.md",
+            "SOURCE_SCRIPTS": root / "scripts", "PAYLOAD_SCRIPTS": payload / "scripts",
+            "SOURCE_AGENTS": root / "agents", "PAYLOAD_AGENTS": payload / "agents",
+        }):
+            for _ in range(2):
+                assert namespace["sync"]() == 0
+                installed = payload / "agents" / "openai.yaml"
+                assert installed.is_file(), "打包同步遗漏了 agents/openai.yaml"
+                assert installed.read_bytes() == metadata.read_bytes()
+                assert namespace["check"]() == 0

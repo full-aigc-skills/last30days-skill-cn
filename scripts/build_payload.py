@@ -13,8 +13,10 @@ ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = ROOT / "skills" / "last30days-cn"
 SOURCE_SKILL = ROOT / "SKILL.md"
 SOURCE_SCRIPTS = ROOT / "scripts"
+SOURCE_AGENTS = ROOT / "agents"
 PAYLOAD_SKILL = PAYLOAD / "SKILL.md"
 PAYLOAD_SCRIPTS = PAYLOAD / "scripts"
+PAYLOAD_AGENTS = PAYLOAD / "agents"
 
 IGNORED_DIRS = {"__pycache__", ".pytest_cache"}
 IGNORED_SUFFIXES = {".pyc", ".pyo"}
@@ -36,6 +38,8 @@ def _mapping() -> Dict[Path, Path]:
     mapping = {SOURCE_SKILL: PAYLOAD_SKILL}
     for src in _iter_files(SOURCE_SCRIPTS):
         mapping[src] = PAYLOAD_SCRIPTS / src.relative_to(SOURCE_SCRIPTS)
+    for src in _iter_files(SOURCE_AGENTS):
+        mapping[src] = PAYLOAD_AGENTS / src.relative_to(SOURCE_AGENTS)
     return mapping
 
 
